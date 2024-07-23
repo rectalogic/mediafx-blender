@@ -1,0 +1,28 @@
+[project]
+name = "mediafx"
+version = "0.1.0"
+description = "Higher level Blender Video Sequence Editor APIs"
+authors = [
+    { name = "Andrew Wason", email = "rectalogic@rectalogic.com" }
+]
+dependencies = []
+#readme = "README.md"
+requires-python = "~= 3.11.0"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mediafx"]
+
+[tool.ruff]
+line-length = 108
+target-version = "py311"

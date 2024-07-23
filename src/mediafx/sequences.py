@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 import typing as ta
 import bpy
@@ -31,7 +32,7 @@ class Sequence(abc.ABC, ta.Generic[T]):
 
     @property
     def sequence(self) -> T:
-        if self.name is None or self.sequencer != self.sequencer.instance:
+        if self.name is None or self.sequencer is not self.sequencer.instance:
             raise InvalidSequenceError()
         try:
             return bpy.context.scene.sequence_editor.sequences_all[self.name]
