@@ -8,27 +8,25 @@ from .encoder import EncoderSettings
 from . import sequences
 
 
-def switch_to_sequencer_workspace() -> bool:
+def _switch_to_sequencer_workspace() -> bool:
     idname = "Video Editing"
-    result: set | None = None
     for template in bpy.utils.app_template_paths():
         result = bpy.ops.workspace.append_activate(
             idname=idname, filepath=os.path.join(template, "Video_Editing/startup.blend")
         )
         if result == {"FINISHED"}:
-            break
-    if result != {"FINISHED"}:
-        for template_path in bpy.utils.app_template_paths():
-            for p in pathlib.Path(template_path).rglob("startup.blend"):
-                result = bpy.ops.workspace.append_activate(idname=idname, filepath=str(p))
-                if result == {"FINISHED"}:
-                    break
+            return True
+
+    for template_path in bpy.utils.app_template_paths():
+        for p in pathlib.Path(template_path).rglob("startup.blend"):
+            result = bpy.ops.workspace.append_activate(idname=idname, filepath=str(p))
             if result == {"FINISHED"}:
-                break
-    return result == {"FINISHED"}
+                return True
+
+    return False
 
 
-def configure_encoder(encoder_settings: EncoderSettings | None):
+def _configure_encoder(encoder_settings: EncoderSettings | None):
     if encoder_settings is None:
         encoder_settings = EncoderSettings()
     scene = bpy.context.scene
@@ -45,7 +43,7 @@ def configure_encoder(encoder_settings: EncoderSettings | None):
 
 
 @contextmanager
-def area_override(area_type: str):
+def _area_override(area_type: str):
     area = next((area for area in bpy.context.screen.areas if area.type == area_type), None)
     if area is None:
         area = bpy.context.screen.areas[0]
@@ -65,14 +63,14 @@ class Sequencer:
         Sequencer.instance = self
         bpy.ops.wm.read_factory_settings(use_empty=True)
 
-        switch_to_sequencer_workspace()
-        configure_encoder(encoder_settings)
+        _switch_to_sequencer_workspace()
+        _configure_encoder(encoder_settings)
 
     def encode(self, filepath: pathlib.Path):
         """Encode video to specified file using current encoder settings."""
         render = bpy.context.scene.render
         render.filepath = str(filepath)
-        with area_override("SEQUENCE_EDITOR"):
+        with _area_override("SEQUENCE_EDITOR"):
             OpsError.check(bpy.ops.sequencer.set_range_to_strips(), "Failed to set sequencer range")
             OpsError.check(bpy.ops.render.render(animation=True), "Failed to render")
 
@@ -89,7 +87,7 @@ class Sequencer:
     ) -> sequences.MovieSequence:
         # bpy.context.scene.sequence_editor.sequences.new_movie() does not support adjust_playback_rate,
         # and sets SeqLoadData.allow_invalid_file=true - so we use ops
-        with area_override("SEQUENCE_EDITOR"):
+        with _area_override("SEQUENCE_EDITOR"):
             index = len(bpy.context.scene.sequence_editor.sequences_all)
             OpsError.check(
                 bpy.ops.sequencer.movie_strip_add(
@@ -107,13 +105,13 @@ class Sequencer:
                 ),
                 "Failed to load movie",
             )
-            return sequences.MovieSequence(
-                bpy.context.scene.sequence_editor.sequences_all[index],
-                self,
-            )
+        return sequences.MovieSequence(
+            bpy.context.scene.sequence_editor.sequences_all[index],
+            self,
+        )
 
     def new_sound(self, filepath: pathlib.Path, channel: int, frame_start: int = 0, mono: bool = False) -> sequences.SoundSequence:
-        with area_override("SEQUENCE_EDITOR"):
+        with _area_override("SEQUENCE_EDITOR"):
             index = len(bpy.context.scene.sequence_editor.sequences_all)
             OpsError.check(
                 bpy.ops.sequencer.sound_strip_add(
@@ -126,10 +124,10 @@ class Sequencer:
                 ),
                 "Failed to load sound",
             )
-            return sequences.SoundSequence(
-                bpy.context.scene.sequence_editor.sequences_all[index],
-                self,
-            )
+        return sequences.SoundSequence(
+            bpy.context.scene.sequence_editor.sequences_all[index],
+            self,
+        )
 
     def dispose(self):
         if Sequencer.instance != self:
