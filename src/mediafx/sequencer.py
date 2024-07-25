@@ -1,11 +1,17 @@
+# Copyright (C) 2024 Andrew Wason
+# SPDX-License-Identifier: GPL-3.0-or-later
+ 
 from __future__ import annotations
 from contextlib import contextmanager
+import logging
 import os
 import pathlib
 import bpy
 from .exceptions import SequencerError, OpsError
 from .encoder import EncoderSettings
 from . import sequences
+
+log = logging.getLogger(__name__)
 
 
 def _switch_to_sequencer_workspace() -> bool:
@@ -23,6 +29,7 @@ def _switch_to_sequencer_workspace() -> bool:
             if result == {"FINISHED"}:
                 return True
 
+    log.warning("Failed to load Video Editing workspace")
     return False
 
 
@@ -61,7 +68,7 @@ class Sequencer:
                 "Only one Sequencer can be active at a time, dispose of current Sequencer first"
             )
         Sequencer.instance = self
-        bpy.ops.wm.read_factory_settings(use_empty=True)
+        bpy.ops.wm.read_factory_settings(use_factory_startup_app_template_only=True, use_empty=True)
 
         _switch_to_sequencer_workspace()
         _configure_encoder(encoder_settings)

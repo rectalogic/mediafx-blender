@@ -5,6 +5,7 @@ description = "Higher level Blender Video Sequence Editor APIs"
 authors = [
     { name = "Andrew Wason", email = "rectalogic@rectalogic.com" }
 ]
+license = {file = "LICENSE"}
 dependencies = []
 #readme = "README.md"
 requires-python = "~= 3.11.0"

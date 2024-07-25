@@ -1,3 +1,6 @@
+# Copyright (C) 2024 Andrew Wason
+# SPDX-License-Identifier: GPL-3.0-or-later
+ 
 from __future__ import annotations
 import typing as ta
 import typing_extensions as tx
@@ -48,24 +51,8 @@ class Sequence(abc.ABC):
 
 
 class MovieSequence(Sequence, bpy_type=bpy.types.MovieSequence):
-    @tx.override
-    @classmethod
-    def new(cls, sequence: bpy.types.MovieSequence) -> MovieSequence:
-        ...
-
-    @tx.override
-    @property
-    def sequence(self) -> bpy.types.MovieSequence:
-        ...
+    pass
 
 
 class SoundSequence(Sequence, bpy_type=bpy.types.SoundSequence):
-    @tx.override
-    @classmethod
-    def new(cls, sequence: bpy.types.SoundSequence) -> SoundSequence:
-        ...
-
-    @tx.override
-    @property
-    def sequence(self) -> bpy.types.SoundSequence:
-        ...
+    pass
