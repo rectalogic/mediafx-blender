@@ -105,9 +105,8 @@ class Sequencer:
                 ),
                 "Failed to load movie",
             )
-        return sequences.MovieSequence(
-            bpy.context.scene.sequence_editor.sequences_all[index],
-            self,
+        return sequences.Sequence.new(
+            bpy.context.scene.sequence_editor.sequences_all[index]
         )
 
     def new_sound(self, filepath: pathlib.Path, channel: int, frame_start: int = 0, mono: bool = False) -> sequences.SoundSequence:
@@ -124,12 +123,11 @@ class Sequencer:
                 ),
                 "Failed to load sound",
             )
-        return sequences.SoundSequence(
-            bpy.context.scene.sequence_editor.sequences_all[index],
-            self,
+        return sequences.Sequence.new(
+            bpy.context.scene.sequence_editor.sequences_all[index]
         )
 
     def dispose(self):
-        if Sequencer.instance != self:
+        if Sequencer.instance is not self:
             raise SequencerError("Sequencer already disposed")
         Sequencer.instance = None

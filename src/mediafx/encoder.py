@@ -1,7 +1,4 @@
-import os
 import dataclasses
-import pathlib
-import bpy
 
 
 @dataclasses.dataclass

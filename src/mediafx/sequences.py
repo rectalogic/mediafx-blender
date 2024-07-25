@@ -1,10 +1,9 @@
 from __future__ import annotations
-import abc
 import typing as ta
+import typing_extensions as tx
+import abc
 import bpy
-from .exceptions import InvalidSequenceError
-if ta.TYPE_CHECKING:
-    from .sequencer import Sequencer
+
 
 # XXX lightweight wrapper with index (grab len(sequences))
 # XXX for sound, just attempt to new_sound and it returns None if no audio
@@ -17,41 +16,56 @@ if ta.TYPE_CHECKING:
 # deleting a clip will change indexes
 # need a name for new_movie() etc. anyway, so generate one? (or let bpy generate) and save it
 
+#XXX should we store reference to the underlying Sequence, and expose it? and then expose extra helpers as needed?
+#XXX Sequencer can maintain dict of "known" sequences it created - mapping between the 2 (wrapper and native)
+
+#XXX what is purpose of Transform effect strip? we can keyframe transform of the video strip itself
+# > version 2.9.2 put Scale and Position properties directly into the strip properties such that creating a Transform strip was no longer necessary for these simple transformations
+# https://www.reddit.com/r/blenderhelp/comments/mxvpr7/vse_smooth_scaling_animation_with_keyframes/
+# Transform allows percentages for offsets
+
+# Sequence should be generic so subclasses return the correct bpy.types.Sequence subtype
+# But this crashes bpy https://projects.blender.org/blender/blender/issues/125376
 
 
-T = ta.TypeVar("T", bound=bpy.types.Sequence)
+class Sequence(abc.ABC):
+    _registry: dict[ta.Class[bpy.types.Sequence], ta.Class[Sequence]] = {}
 
+    def __init_subclass__(cls, /, bpy_type: ta.Class[bpy.types.Sequence], **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._registry[bpy_type] = cls
 
-class Sequence(abc.ABC, ta.Generic[T]):
-    name: str | None
-    sequencer: Sequencer
+    def __init__(self, sequence: bpy.types.Sequence):
+        self._sequence = sequence
 
-    def __init__(self, seq: T, sequencer: Sequencer):
-        self.name = seq.name
-        self.sequencer = sequencer
+    @classmethod
+    def new(cls, sequence: bpy.types.Sequence) -> Sequence:
+        return cls._registry[type(sequence)](sequence)
 
     @property
-    def sequence(self) -> T:
-        if self.name is None or self.sequencer is not self.sequencer.instance:
-            raise InvalidSequenceError()
-        try:
-            return bpy.context.scene.sequence_editor.sequences_all[self.name]
-        except KeyError:
-            self.name = None
-            raise InvalidSequenceError()
+    def sequence(self) -> bpy.types.Sequence:
+        return self._sequence
 
+
+class MovieSequence(Sequence, bpy_type=bpy.types.MovieSequence):
+    @tx.override
+    @classmethod
+    def new(cls, sequence: bpy.types.MovieSequence) -> MovieSequence:
+        ...
+
+    @tx.override
     @property
-    def channel(self) -> int:
-        return self.sequence.channel
-    
+    def sequence(self) -> bpy.types.MovieSequence:
+        ...
+
+
+class SoundSequence(Sequence, bpy_type=bpy.types.SoundSequence):
+    @tx.override
+    @classmethod
+    def new(cls, sequence: bpy.types.SoundSequence) -> SoundSequence:
+        ...
+
+    @tx.override
     @property
-    def duration(self) -> int:
-        return self.sequence.frame_duration
-
-
-class MovieSequence(Sequence[bpy.types.MovieSequence]):
-    pass
-
-
-class SoundSequence(Sequence[bpy.types.SoundSequence]):
-    pass
+    def sequence(self) -> bpy.types.SoundSequence:
+        ...
